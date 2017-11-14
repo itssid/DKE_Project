@@ -1,8 +1,14 @@
 import pygame
 import time
 import random
+import sqlite3
 
 pygame.init()
+
+conn  = sqlite3.connect("pocket_tanks.db")
+cursor = conn.cursor()
+
+turn = -1
 
 display_width = 800
 display_height = 600
@@ -43,6 +49,21 @@ ground_height = 35
 smallfont = pygame.font.SysFont("comicsansms", 15)
 medfont = pygame.font.SysFont("comicsansms", 25)
 largefont = pygame.font.SysFont("comicsansms", 30)
+
+def create_table():
+    cursor.execute("CREATE TABLE IF NOT EXISTS user_shot_attr(power INTEGER,angle REAL,initial_point REAL,final_point REAL,distance REAL)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS computer_shot_attr(power INTEGER,angle REAL,initial_point REAL,final_point REAL,distance REAL)")
+
+def user_dynamic_entry():
+    cursor.execute("INSERT INTO user_shot_attr (power,angle,initial_point,final_point,distance) VALUES(?,?,?,?,?)",
+                   (power,angle,initial_point,final_point,distance))
+    conn.commit()
+
+def computer_dynamic_entry():
+    cursor.execute("INSERT INTO computer_shot_attr (power,angle,initial_point,final_point,distance) VALUES(?,?,?,?,?)",
+                   (power,angle,initial_point,final_point,distance))
+    conn.commit()
+
 
 def score(score):
 
@@ -481,13 +502,13 @@ def game_over():
 
         gameDisplay.fill(light_blue)
         message_to_screen("Game Over",green,-100,size="large")
-        message_to_screen("You died.",black,-30)
+        message_to_screen("You died.",black,-30,size="medium")
 
 
 
-        button("play Again", 150,500,150,50, green, light_green, action="play")
-        button("controls", 350,500,100,50, yellow, light_yellow, action="controls")
-        button("quit", 550,500,100,50, red, light_red, action ="quit")
+        button("play Again", 150,500,150,50, green, light_green,size="large",action="play")
+        button("controls", 350,500,100,50, yellow, light_yellow,size="large",action="controls")
+        button("quit", 550,500,100,50, red, red,size="large",action ="quit")
 
 
         pygame.display.update()
@@ -507,13 +528,13 @@ def you_win():
 
         gameDisplay.fill(light_blue)
         message_to_screen("You won!",green,-100,size="large")
-        message_to_screen("Congratulations!",black,-30)
+        message_to_screen("Congratulations!",black,-30,size="medium")
 
 
 
-        button("play Again", 150,500,150,50, green, light_green, action="play")
-        button("controls", 350,500,100,50, yellow, light_yellow, action="controls")
-        button("quit", 550,500,100,50, red, light_red, action ="quit")
+        button("play Again", 150,500,150,50, green, light_green,size="large",action="play")
+        button("controls", 350,500,100,50, yellow, light_yellow,size="large",action="controls")
+        button("quit", 550,500,100,50, red, red,size="large",action ="quit")
 
 
         pygame.display.update()
@@ -719,5 +740,8 @@ def gameLoop():
     pygame.quit()
     quit()
 
+create_table()
 game_intro()
 gameLoop()
+cursor.close()
+conn.close()
