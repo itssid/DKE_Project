@@ -10,6 +10,9 @@ conn  = sqlite3.connect("pocket_tanks.db")
 cursor = conn.cursor()
 
 angle = 0
+angle2 = 0
+
+
 display_width = 800
 display_height = 600
 
@@ -41,8 +44,8 @@ clock = pygame.time.Clock()
 tankWidth = 40
 tankHeight = 20
 
-turretWidth = 4
-wheelWidth = 4
+turretWidth = 5
+wheelWidth = 5
 
 ground_height = 35
 
@@ -51,22 +54,18 @@ medfont = pygame.font.SysFont("comicsansms", 25)
 largefont = pygame.font.SysFont("comicsansms", 30)
 
 def create_table():
+    cursor.execute("CREATE TABLE IF NOT EXISTS user_shot_attr(power INTEGER,angle REAL,initial_point INTEGER,final_point INTEGER,distance INTEGER)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS computer_shot_attr(power INTEGER,angle REAL,initial_point INTEGER,final_point INTEGER,distance INTEGER)")
 
-    cursor.execute("CREATE TABLE IF NOT EXISTS user_shot_attr(power INTEGER,angle REAL,initial_point INTEGER,final_point INTEGER,barrier INTEGER,ememy_positon INTEGER, damage INTEGER)")
-
-#    cursor.execute("CREATE TABLE IF NOT EXISTS computer_shot_attr(power INTEGER,angle REAL,initial_point INTEGER,final_point INTEGER,barrier INTEGER, ememy_position INTEGER)")
-
-def user_dynamic_entry(power,angle,initial_point,final_point,barrier,ememy_positon,damage):
-    cursor.execute("INSERT INTO user_shot_attr (power,angle,initial_point,final_point,barrier,ememy_positon,damage) VALUES(?,?,?,?,?,?,?)",
-                   (power,angle,initial_point,final_point,barrier,ememy_positon,damage))
-
+def user_dynamic_entry(power,angle,initial_point,final_point,distance):
+    cursor.execute("INSERT INTO user_shot_attr (power,angle,initial_point,final_point,distance) VALUES(?,?,?,?,?)",
+                   (power,angle,initial_point,final_point,distance))
     conn.commit()
 
-
-#def computer_dynamic_entry():
- #   cursor.execute("INSERT INTO computer_shot_attr (power,angle,initial_point,final_point,barrier,ememy_positon) VALUES(?,?,?,?,?)",
-   #                (power,angle,initial_point,final_point,barrier,ememy_positon))
-  #  conn.commit()
+def computer_dynamic_entry():
+    cursor.execute("INSERT INTO computer_shot_attr (power,angle,initial_point,final_point,distance) VALUES(?,?,?,?,?)",
+                   (power,angle,initial_point,final_point,distance))
+    conn.commit()
 
 
 def score(score):
@@ -101,29 +100,25 @@ def tank(x,y,turPos):
     y = int(y)
 
 
-    possibleTurrets = [(x-30, y-1),
-					   (x-28, y-2),
-                       (x-26, y-4),
-                       (x-24, y-6),
-                       (x-22, y-8),
-                       (x-20, y-10),
-                       (x-18, y-12),
-                       (x-16, y-14),
-                       (x-14, y-16),
-                       (x-12, y-18),
-                       (x-10, y-20),
-                       (x-8,  y-22),
-                       (x-6,  y-24),
-					   (x-4,  y-26),
-					   (x-2,  y-28),
-					   (x-1,  y-30)
+    possibleTurrets = [(x-27, y-2),
+                       (x-26, y-5),
+                       (x-25, y-8),
+                       (x-23, y-12),
+                       (x-20, y-14),
+                       (x-18, y-15),
+                       (x-15, y-17),
+                       (x-13, y-19),
+                       (x-11, y-21),
+                       (x-10,y-22),
+                       (x-9,y-23),
+                       (x-8,y-24)
                        ]
   
     pygame.draw.circle(gameDisplay, blue, (x,y), int(tankHeight/2))
     pygame.draw.rect(gameDisplay, blue, (x-tankHeight, y, tankWidth, tankHeight))
     pygame.draw.line(gameDisplay, blue, (x,y), possibleTurrets[turPos], turretWidth)
 
-    angle = np.arctan((possibleTurrets[turPos][1]-y)/(possibleTurrets[turPos][0]-x))        
+    angle = np.rad2deg(np.arctan((possibleTurrets[turPos][1]-y)/(possibleTurrets[turPos][0]-x)))      
     
     pygame.draw.circle(gameDisplay, black, (x-15, y+20), wheelWidth)
     pygame.draw.circle(gameDisplay, black, (x-10, y+20), wheelWidth)
@@ -143,29 +138,25 @@ def enemy_tank(x,y,turPos):
     y = int(y)
 
 
-    possibleTurrets = [(x+30, y-1),
-					   (x+28, y-2),
-                       (x+26, y-4),
-                       (x+24, y-6),
-                       (x+22, y-8),
-                       (x+20, y-10),
-                       (x+18, y-12),
-                       (x+16, y-14),
-                       (x+14, y-16),
-                       (x+12, y-18),
-                       (x+10, y-20),
-                       (x+8,  y-22),
-                       (x+6,  y-24),
-					   (x+4,  y-26),
-					   (x+2,  y-28),
-					   (x+1,  y-30)
+    possibleTurrets = [(x+27, y-2),
+                       (x+26, y-5),
+                       (x+25, y-8),
+                       (x+23, y-12),
+                       (x+20, y-14),
+                       (x+18, y-15),
+                       (x+15, y-17),
+                       (x+13, y-19),
+                       (x+11, y-21),
+                       (x+12, y-22),
+                       (x+13,y-23),
+                       (x+14,y-24)
                        ]
   
     pygame.draw.circle(gameDisplay, red, (x,y), int(tankHeight/2))
     pygame.draw.rect(gameDisplay, red, (x-tankHeight, y, tankWidth, tankHeight))
 
     pygame.draw.line(gameDisplay, red, (x,y), possibleTurrets[turPos], turretWidth)
-
+    angle2 = np.rad2deg(np.arctan((possibleTurrets[turPos][1]-y)/(possibleTurrets[turPos][0]-x)))
     pygame.draw.circle(gameDisplay, black, (x-15, y+20), wheelWidth)
     pygame.draw.circle(gameDisplay, black, (x-10, y+20), wheelWidth)
     pygame.draw.circle(gameDisplay, black, (x-15, y+20), wheelWidth)
@@ -176,7 +167,7 @@ def enemy_tank(x,y,turPos):
     pygame.draw.circle(gameDisplay, black, (x+10, y+20), wheelWidth)
     pygame.draw.circle(gameDisplay, black, (x+15, y+20), wheelWidth)
 
-    return possibleTurrets[turPos]
+    return possibleTurrets[turPos],angle2
 
 
 def game_controls():
@@ -301,7 +292,13 @@ def fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHeig
 
     startingShell = list(xy)
 
-    #print("FIRE!",xy)                
+    #print("FIRE!",xy)
+
+    if (turn == -1): #Storing user input into database
+            user_dynamic_entry(gun_power,deg_angle,initialTankX,tankx,tankx-initialTankX)
+            turn = turn * -1
+            print("initial point: "+str(initialTankX)+"final point: "+str(tankx)) 
+                
     while fire:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -311,9 +308,9 @@ def fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHeig
         pygame.draw.circle(gameDisplay, red, (startingShell[0],startingShell[1]),5)
 
 
-        startingShell[0] -= (16 - turPos)*2
+        startingShell[0] -= (15 - turPos)*2
 
-        startingShell[1] += int((((startingShell[0]-xy[0])*0.016/(gun_power/50))**2) - (turPos+turPos/(16-turPos)))
+        startingShell[1] += int((((startingShell[0]-xy[0])*0.012/(gun_power/50))**2) - (turPos+turPos/(15-turPos)))
 
         if startingShell[1] > display_height-ground_height:
             #print("Last shell:",startingShell[0], startingShell[1])
@@ -333,6 +330,7 @@ def fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHeig
             elif enemyTankX + 35 > hit_x > enemyTankX - 35:
                 #print("Light Hit")
                 damage = 5
+            
             
             explosion(hit_x,hit_y)
             fire = False
@@ -355,25 +353,18 @@ def fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHeig
         pygame.display.update()
         clock.tick(60)
         
-##################################################################################################################
-
-    if (turn == -1): #Storing user input into database
-        user_dynamic_entry( gun_power, turPos, initialTankX, hit_x, randomHeight, enemyTankX, damage)
-        turn = turn * -1
-        print("initial: "+str(initialTankX)+" Drop point: "+str(hit_x) + " Turret pos:" + 
-str(turPos) + " Power:" + str(gun_power)  +" Barrier: "+str(randomHeight) +" Enemy tank: "+str(enemyTankX) + " Damage: " + str(damage))
-
             
     return damage,turn
 
         
-def e_fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHeight,ptankx,ptanky,turn):
+def e_fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHeight,ptankx,ptanky,deg_angle,turn,initialTankX):
 
     damage = 0
     currentPower = 1
     power_found = False
+
     turn = turn * -1
-    
+        
     while not power_found:
         currentPower += 1
         if currentPower > 100:
@@ -389,14 +380,14 @@ def e_fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHe
                     pygame.quit()
                     quit()
 
-            startingShell[0] += (16 - turPos)*2
-            startingShell[1] += int((((startingShell[0]-xy[0])*0.016/(currentPower/50))**2) - (turPos+turPos/(16-turPos)))
+            startingShell[0] += (12 - turPos)*2
+            startingShell[1] += int((((startingShell[0]-xy[0])*0.013/(currentPower/50))**2) - (turPos+turPos/(12-turPos)))
 
             if startingShell[1] > display_height-ground_height:
                 hit_x = int((startingShell[0]*display_height-ground_height)/startingShell[1])
                 hit_y = int(display_height-ground_height)
                 #explosion(hit_x,hit_y)
-                if ptankx+16 > hit_x > ptankx - 16:
+                if ptankx+15 > hit_x > ptankx - 15:
                     print("target acquired!")
                     power_found = True
                 fire = False
@@ -427,12 +418,12 @@ def e_fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHe
         pygame.draw.circle(gameDisplay, red, (startingShell[0],startingShell[1]),5)
 
 
-        startingShell[0] += (16 - turPos)*2
+        startingShell[0] += (12 - turPos)*2
 
 
         gun_power = random.randrange(int(currentPower*0.90), int(currentPower*1.10))
         
-        startingShell[1] += int((((startingShell[0]-xy[0])*0.016/(gun_power/50))**2) - (turPos+turPos/(16-turPos)))
+        startingShell[1] += int((((startingShell[0]-xy[0])*0.013/(gun_power/50))**2) - (turPos+turPos/(12-turPos)))
 
         if startingShell[1] > display_height-ground_height:
             #print("last shell:",startingShell[0],startingShell[1])
@@ -440,19 +431,6 @@ def e_fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHe
             hit_y = int(display_height-ground_height)
             #print("Impact:",hit_x,hit_y)
 
-
-
-            if abs(ptankx - hit_x) < 10:
-                print("Critical Hit!")
-                damage = 25
-            elif abs(ptankx - hit_x) < 15:
-                print("Hard Hit!")
-                damage = 18
-            elif abs(ptankx - hit_x) < 25:
-                print("Medium Hit")
-                damage = 10
-            elif abs(ptankx - hit_x) < 35:
-                print("Light Hit")
 
             if ptankx + 10 > hit_x > ptankx - 10:
                 #print("Critical Hit!")
@@ -465,7 +443,6 @@ def e_fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHe
                 damage = 10
             elif ptankx + 35 > hit_x > ptankx - 35:
                 #print("Light Hit")
-
                 damage = 5
 
 
@@ -559,10 +536,10 @@ def you_win():
 
     while win:
         for event in pygame.event.get():
-            #print(event)
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+                #print(event)
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    quit()
 
         gameDisplay.fill(light_blue)
         message_to_screen("You won!",green,-100,size="large")
@@ -606,12 +583,13 @@ def gameLoop():
     gameExit = False
     gameOver = False
     FPS = 15
-    turn = -1    
+    turn = -1 #set user to play first   
     player_health = 100
     enemy_health = 100
 
     barrier_width = 20
     initialTankX = 0
+    enemy_initialTankX = 0
     mainTankX = display_width * 0.9    
     mainTankY = display_height * 0.9 
     tankMove = 0
@@ -664,18 +642,17 @@ def gameLoop():
                 elif event.key == pygame.K_d: #Move tank right
                     tankMove = 5
                     
-
-                elif event.key == pygame.K_UP: #Move turret up
+                elif event.key == pygame.K_w: #Move turret up
                     changeTur = 1
                     
-                elif event.key == pygame.K_DOWN: #Move turret down
-                
+                elif event.key == pygame.K_s: #Move turret down
                     changeTur = -1
 
                 elif event.key == pygame.K_p:
                     pause()
 
                 elif event.key == pygame.K_SPACE: #Launch attack
+                    turn = turn * -1
                     damage,turn = fireShell(gun,mainTankX,mainTankY,currentTurPos,fire_power,xlocation,barrier_width,randomHeight,enemyTankX,enemyTankY,deg_angle,turn,initialTankX)
                     enemy_health -= damage
                     
@@ -693,7 +670,7 @@ def gameLoop():
                             gameDisplay.fill(light_blue)
                             health_bars(player_health,enemy_health)
                             gun = tank(mainTankX,mainTankY,currentTurPos)
-                            enemy_gun = enemy_tank(enemyTankX, enemyTankY, 8)
+                            enemy_gun,enemy_angle = enemy_tank(enemyTankX, enemyTankY, 8)
                             fire_power += power_change
 
                             power(fire_power)
@@ -710,36 +687,37 @@ def gameLoop():
                     
 
                     
-                    damage,turn = e_fireShell(enemy_gun,enemyTankX,enemyTankY,8,50,xlocation,barrier_width,randomHeight,mainTankX,mainTankY,turn)
+                    damage,turn = e_fireShell(enemy_gun,enemyTankX,enemyTankY,8,50,xlocation,barrier_width,randomHeight,mainTankX,mainTankY,enemy_angle,turn,enemy_initialTankX)
                     player_health -= damage
                     
-                elif event.key == pygame.K_LEFT:
+                elif event.key == pygame.K_q:
                     power_change = -1
-                elif event.key == pygame.K_RIGHT:
+                elif event.key == pygame.K_e:
                     power_change = 1
 
             elif event.type == pygame.KEYUP:
                 if event.key == pygame.K_a or event.key == pygame.K_d:
                     tankMove = 0
 
-                if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+                if event.key == pygame.K_w or event.key == pygame.K_s:
                     changeTur = 0
                     
-                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                if event.key == pygame.K_q or event.key == pygame.K_e:
                     power_change = 0
                 
 
         if turn == -1:
             initialTankX = mainTankX
-                    
+            turn = turn * -1
+            
         mainTankX += tankMove
 
         currentTurPos += changeTur
 
-        if currentTurPos > 15:
-            currentTurPos = 15
-        elif currentTurPos < 1:
-            currentTurPos = 1
+        if currentTurPos > 11:
+            currentTurPos = 11
+        elif currentTurPos < 0:
+            currentTurPos = 0
 
 
         if mainTankX - (tankWidth/1.5) < xlocation+barrier_width:
