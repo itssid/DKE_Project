@@ -10,6 +10,7 @@ conn  = sqlite3.connect("pocket_tanks.db")
 cursor = conn.cursor()
 
 angle = 0
+
 display_width = 800
 display_height = 600
 
@@ -51,7 +52,6 @@ medfont = pygame.font.SysFont("comicsansms", 25)
 largefont = pygame.font.SysFont("comicsansms", 30)
 
 def create_table():
-
     cursor.execute("CREATE TABLE IF NOT EXISTS user_shot_attr(power INTEGER,angle REAL,initial_point INTEGER,final_point INTEGER,barrier INTEGER,ememy_positon INTEGER, damage INTEGER)")
 
 #    cursor.execute("CREATE TABLE IF NOT EXISTS computer_shot_attr(power INTEGER,angle REAL,initial_point INTEGER,final_point INTEGER,barrier INTEGER, ememy_position INTEGER)")
@@ -63,10 +63,27 @@ def user_dynamic_entry(power,angle,initial_point,final_point,barrier,ememy_posit
     conn.commit()
 
 
+def selecting(user_tank,comp_tank):
+    num = user_tank-comp_tank
+    cursor.execute("SELECT * from user_shot_attr where barrier>400 and abs(%s-(initial_point-final_point)) < 36 ORDER BY damage DESC;" % num)
+    rows = cursor.fetchall()
+#    print(rows[0][0],rows[1][1])
+    try:
+        a,b = rows[0][0],int(rows[1][1])
+    except IndexError:
+        a,b = 70,12    
+    return a,int(b)
+    
+    #for row in rows:
+        #print(row[1])
+#	for row in rows:
+#		print "%s %s %s" % (row["power"], row["angle"], row["initial_point"])
+
 #def computer_dynamic_entry():
  #   cursor.execute("INSERT INTO computer_shot_attr (power,angle,initial_point,final_point,barrier,ememy_positon) VALUES(?,?,?,?,?)",
    #                (power,angle,initial_point,final_point,barrier,ememy_positon))
   #  conn.commit()
+
 
 
 def score(score):
@@ -122,8 +139,7 @@ def tank(x,y,turPos):
     pygame.draw.circle(gameDisplay, blue, (x,y), int(tankHeight/2))
     pygame.draw.rect(gameDisplay, blue, (x-tankHeight, y, tankWidth, tankHeight))
     pygame.draw.line(gameDisplay, blue, (x,y), possibleTurrets[turPos], turretWidth)
-
-    angle = np.arctan((possibleTurrets[turPos][1]-y)/(possibleTurrets[turPos][0]-x))        
+  
     
     pygame.draw.circle(gameDisplay, black, (x-15, y+20), wheelWidth)
     pygame.draw.circle(gameDisplay, black, (x-10, y+20), wheelWidth)
@@ -135,7 +151,7 @@ def tank(x,y,turPos):
     pygame.draw.circle(gameDisplay, black, (x+10, y+20), wheelWidth)
     pygame.draw.circle(gameDisplay, black, (x+15, y+20), wheelWidth)
 
-    return possibleTurrets[turPos],angle
+    return possibleTurrets[turPos]
 
 
 def enemy_tank(x,y,turPos):
@@ -186,9 +202,9 @@ def game_controls():
 
     while gcont:
         for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    quit()
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
 
         gameDisplay.fill(purple)
 
@@ -199,11 +215,11 @@ def game_controls():
         message_to_screen("Move Turret: W and S ",black,-150,size="medium")
         message_to_screen("Move Tank: A and D",black,-120,size="medium")
         message_to_screen("Adjust Power: Q to increase and E to decrease",black,-90,size="medium")
-##        message_to_screen("PLAYER 2",black,-50,size="large")
-##        message_to_screen("FIRE: J",black,-20,size="medium")
-##        message_to_screen("Move Turret: UP Arrow and DOWN Arrow ",black,10,size="medium")
-##        message_to_screen("Move Tank: LEFT Arrow and RIGHT Arrow",black,40,size="medium")
-##        message_to_screen("Adjust Power: K to increase and L to decrease",black,70,size="medium")
+##      message_to_screen("PLAYER 2",black,-50,size="large")
+##      message_to_screen("FIRE: J",black,-20,size="medium")
+##      message_to_screen("Move Turret: UP Arrow and DOWN Arrow ",black,10,size="medium")
+##      message_to_screen("Move Tank: LEFT Arrow and RIGHT Arrow",black,40,size="medium")
+##      message_to_screen("Adjust Power: K to increase and L to decrease",black,70,size="medium")
         message_to_screen("Pause: P",black,150,size="medium")
         button("PLAY",150,490,150,100,dark_green,green,size="large",action="play")
         button("QUIT",550,490,150,100,maroon,red,size="large",action="quit")
@@ -260,7 +276,6 @@ def pause():
 
 
 def barrier(xlocation,randomHeight, barrier_width):
-    
     pygame.draw.rect(gameDisplay, brown, [xlocation, display_height-randomHeight, barrier_width,randomHeight])
     
 def explosion(x, y, size=50):
@@ -295,13 +310,15 @@ def explosion(x, y, size=50):
         
 
 
-def fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHeight,enemyTankX,enemyTankY,deg_angle,turn,initialTankX):
+def fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHeight,enemyTankX,enemyTankY,turn,initialTankX):
     fire = True
     damage = 0
 
     startingShell = list(xy)
 
-    #print("FIRE!",xy)                
+    #print("FIRE!",xy)
+
+                
     while fire:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -441,7 +458,6 @@ def e_fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHe
             #print("Impact:",hit_x,hit_y)
 
 
-
             if abs(ptankx - hit_x) < 10:
                 print("Critical Hit!")
                 damage = 25
@@ -453,19 +469,6 @@ def e_fireShell(xy,tankx,tanky,turPos,gun_power,xlocation,barrier_width,randomHe
                 damage = 10
             elif abs(ptankx - hit_x) < 35:
                 print("Light Hit")
-
-            if ptankx + 10 > hit_x > ptankx - 10:
-                #print("Critical Hit!")
-                damage = 25
-            elif ptankx + 15 > hit_x > ptankx - 15:
-                #print("Hard Hit!")
-                damage = 18
-            elif ptankx + 25 > hit_x > ptankx - 25:
-                #print("Medium Hit")
-                damage = 10
-            elif ptankx + 35 > hit_x > ptankx - 35:
-                #print("Light Hit")
-
                 damage = 5
 
 
@@ -605,18 +608,20 @@ def health_bars(player_health, enemy_health):
 def gameLoop():
     gameExit = False
     gameOver = False
-    FPS = 15
+    FPS = 20
     turn = -1    
     player_health = 100
     enemy_health = 100
 
-    barrier_width = 20
+    barrier_width = 40
     initialTankX = 0
     mainTankX = display_width * 0.9    
     mainTankY = display_height * 0.9 
     tankMove = 0
     currentTurPos = 0
     changeTur = 0
+    db_power=70
+    db_turret=12
 
     enemyTankX = display_width * 0.1
     enemyTankY = display_height * 0.9
@@ -626,7 +631,7 @@ def gameLoop():
 
     xlocation = (display_width/2) 
     #randomHeight = random.randrange(display_height*0.1,display_height*0.6)
-    randomHeight = random.randrange(display_height*0.5,display_height*0.7)
+    randomHeight = random.randrange(display_height*0.3,display_height*0.6)
     
     while not gameExit:        
                 
@@ -651,33 +656,29 @@ def gameLoop():
 
 
         for event in pygame.event.get():
-
-
-
             if event.type == pygame.QUIT:
                 gameExit = True
 
             if event.type == pygame.KEYDOWN: #Move tank Left
                 if event.key == pygame.K_a:
                     tankMove = -5
-                    
                 elif event.key == pygame.K_d: #Move tank right
                     tankMove = 5
-                    
-
                 elif event.key == pygame.K_UP: #Move turret up
                     changeTur = 1
-                    
                 elif event.key == pygame.K_DOWN: #Move turret down
-                
                     changeTur = -1
-
                 elif event.key == pygame.K_p:
                     pause()
-
                 elif event.key == pygame.K_SPACE: #Launch attack
-                    damage,turn = fireShell(gun,mainTankX,mainTankY,currentTurPos,fire_power,xlocation,barrier_width,randomHeight,enemyTankX,enemyTankY,deg_angle,turn,initialTankX)
+                    
+                    damage,turn = fireShell(gun,mainTankX,mainTankY,currentTurPos,fire_power,xlocation,barrier_width,randomHeight,enemyTankX,enemyTankY,turn,initialTankX)
                     enemy_health -= damage
+                    
+                    db_power,db_turret = selecting(initialTankX,enemyTankX)
+                    
+                    damage,turn = e_fireShell(enemy_gun,enemyTankX,enemyTankY,db_turret,db_power,xlocation,barrier_width,randomHeight,mainTankX,mainTankY,turn)
+                    player_health -= damage
                     
                     possibleMovement = ['f','r']
                     moveIndex = random.randrange(0,2)
@@ -693,25 +694,15 @@ def gameLoop():
                             gameDisplay.fill(light_blue)
                             health_bars(player_health,enemy_health)
                             gun = tank(mainTankX,mainTankY,currentTurPos)
-                            enemy_gun = enemy_tank(enemyTankX, enemyTankY, 8)
-                            fire_power += power_change
 
+                            enemy_gun = enemy_tank(enemyTankX, enemyTankY, db_turret)
                             power(fire_power)
-
                             barrier(xlocation,randomHeight,barrier_width)
                             gameDisplay.fill(green, rect=[0, display_height-ground_height, display_width, ground_height])
                             pygame.display.update()
 
                             clock.tick(FPS)
-                            
-                            
-                        
-
-                    
-
-                    
-                    damage,turn = e_fireShell(enemy_gun,enemyTankX,enemyTankY,8,50,xlocation,barrier_width,randomHeight,mainTankX,mainTankY,turn)
-                    player_health -= damage
+                   
                     
                 elif event.key == pygame.K_LEFT:
                     power_change = -1
@@ -753,8 +744,8 @@ def gameLoop():
 
         gameDisplay.fill(light_blue)
         health_bars(player_health,enemy_health)
-        gun,deg_angle = tank(mainTankX,mainTankY,currentTurPos)
-        enemy_gun = enemy_tank(enemyTankX, enemyTankY, 8)
+        gun = tank(mainTankX,mainTankY,currentTurPos)
+        enemy_gun = enemy_tank(enemyTankX, enemyTankY, db_turret)
         fire_power += power_change
 
         if fire_power >= 100:
